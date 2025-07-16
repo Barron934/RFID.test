@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>環保水卡 UID 查詢儀表板</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #f0f4f8;
+      padding: 2rem;
+      color: #333;
+      text-align: center;
+    }
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 500px;
+      margin: 2rem auto;
+    }
+    .title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      font-size: 1rem;
+      width: 60%;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-left: 0.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 1rem;
+    }
+    .result p {
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">🌱 環保水卡 UID 查詢</div>
+    <input id="uidInput" type="text" placeholder="輸入你的 UID (例如 A1957A48)" />
+    <button onclick="queryData()">查詢</button>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbw4yvm-o8hA-6tCvaXCy_WVeK3J_E25xHfJgolG6-Y4aXPEhsz7hiEL4vAh1ycX8m8a/exec";
+
+    // 手動建立 UID 對應姓名（可改為從後端讀取）
+    const uidMap = {
+      "A1957A48": "王同學",
+      "83DEF5BD": "李同學",
+      "12345678": "測試用戶"
+    };
+
+    async function queryData() {
+      const uid = document.getElementById("uidInput").value.trim().toUpperCase();
+      const resDiv = document.getElementById("result");
+
+      if (!uid) {
+        resDiv.innerHTML = "❗請輸入 UID。";
+        return;
+      }
+
+      try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (!data[uid]) {
+          resDiv.innerHTML = `⚠️ 找不到 UID：${uid}`;
+        } else {
+          const { total, today, rank } = data[uid];
+          const name = uidMap[uid] || uid;
+          resDiv.innerHTML = `
+            <p>👤 使用者：<strong>${name}</strong></p>
+            <p>📆 今日喝水次數：<strong>${today}</strong></p>
+            <p>💧 累積點數：<strong>${total}</strong></p>
+            <p>🏆 校園總排名：<strong>第 ${rank} 名</strong></p>
+          `;
+        }
+      } catch (error) {
+        resDiv.innerHTML = `❌ 錯誤：${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
