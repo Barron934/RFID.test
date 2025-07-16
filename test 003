@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>環保水卡 UID 查詢儀表板</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 1rem;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem 0;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #7f8c8d;
+      font-size: 1rem;
+    }
+
+    .input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    #uidInput {
+      flex: 1;
+      padding: 1rem;
+      font-size: 1.1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+
+    #uidInput:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    .query-btn {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4caf50, #45a049);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+
+    .query-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+    }
+
+    .query-btn:active {
+      transform: translateY(0);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      font-size: 1.1rem;
+      color: #666;
+    }
+
+    .loading::after {
+      content: "⏳";
+      animation: spin 1s linear infinite;
+      margin-left: 0.5rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .result-section {
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-item {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+      animation: countUp 1s ease;
+    }
+
+    @keyframes countUp {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #7f8c8d;
+    }
+
+    .progress-section {
+      margin-top: 2rem;
+    }
+
+    .progress-item {
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-label {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .progress-value {
+      font-weight: 700;
+      color: #4caf50;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50, #45a049);
+      border-radius: 6px;
+      transition: width 1s ease;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid #ffcdd2;
+    }
+
+    .demo-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+    }
+
+    .demo-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #495057;
+    }
+
+    .demo-uids {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .demo-uid {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid #bbdefb;
+    }
+
+    .demo-uid:hover {
+      background: #1976d2;
+      color: white;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1rem 0;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+      
+      .input-group {
+        flex-direction: column;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="title">🌱 環保水卡 UID 查詢</div>
+        <div class="subtitle">輸入您的 UID 查看個人喝水紀錄</div>
+      </div>
+
+      <div class="input-section">
+        <div class="input-group">
+          <input id="uidInput" type="text" placeholder="請輸入您的 UID (例如: A1957A48)" maxlength="8" />
+          <button class="query-btn" onclick="queryData()">查詢</button>
+        </div>
+      </div>
+
+      <div id="loading" class="loading" style="display: none;">
+        正在查詢資料中，請稍候
+      </div>
+
+      <div id="result" class="result-section">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" id="todayCount">0</div>
+            <div class="stat-label">今日喝水次數</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">💧</div>
+            <div class="stat-value" id="totalCount">0</div>
+            <div class="stat-label">累積點數</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="rankValue">0</div>
+            <div class="stat-label">校園排名</div>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-header">
+              <span class="progress-label">今日進度</span>
+              <span class="progress-value" id="dailyProgress">0/8</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="dailyProgressBar" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="progress-item">
+            <div class="progress-header">
+              <span class="progress-label">排名進度</span>
+              <span class="progress-value" id="rankProgress">前 0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="rankProgressBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="error" class="error-message" style="display: none;"></div>
+
+      <div class="demo-section">
+        <div class="demo-title">📋 測試用 UID 範例</div>
+        <div class="demo-uids">
+          <span class="demo-uid" onclick="fillUID('A1957A48')">A1957A48</span>
+          <span class="demo-uid" onclick="fillUID('B2468B59')">B2468B59</span>
+          <span class="demo-uid" onclick="fillUID('C3579C60')">C3579C60</span>
+          <span class="demo-uid" onclick="fillUID('D4680D71')">D4680D71</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模擬資料庫 (實際環境中會從 API 獲取)
+    const mockData = {
+      'A1957A48': { total: 156, today: 6, rank: 23 },
+      'B2468B59': { total: 203, today: 8, rank: 12 },
+      'C3579C60': { total: 98, today: 3, rank: 45 },
+      'D4680D71': { total: 234, today: 7, rank: 8 },
+      'E5791E82': { total: 67, today: 2, rank: 67 }
+    };
+
+    // 總用戶數 (用於計算排名百分比)
+    const totalUsers = 100;
+
+    function fillUID(uid) {
+      document.getElementById('uidInput').value = uid;
+      document.getElementById('uidInput').focus();
+    }
+
+    function animateValue(element, start, end, duration) {
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.floor(start + (end - start) * progress);
+        
+        element.textContent = current;
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function showResult(data) {
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
+      
+      // 動畫更新數值
+      const todayElement = document.getElementById('todayCount');
+      const totalElement = document.getElementById('totalCount');
+      const rankElement = document.getElementById('rankValue');
+      
+      animateValue(todayElement, 0, data.today, 1000);
+      animateValue(totalElement, 0, data.total, 1500);
+      animateValue(rankElement, 0, data.rank, 1200);
+      
+      // 更新進度條
+      const dailyProgress = Math.min((data.today / 8) * 100, 100);
+      const rankProgress = Math.max(((totalUsers - data.rank) / totalUsers) * 100, 0);
+      
+      document.getElementById('dailyProgress').textContent = `${data.today}/8`;
+      document.getElementById('rankProgress').textContent = `前 ${Math.round(rankProgress)}%`;
+      
+      // 動畫進度條
+      setTimeout(() => {
+        document.getElementById('dailyProgressBar').style.width = dailyProgress + '%';
+        document.getElementById('rankProgressBar').style.width = rankProgress + '%';
+      }, 500);
+    }
+
+    async function queryData() {
+      const uid = document.getElementById('uidInput').value.trim().toUpperCase();
+      
+      // 輸入驗證
+      if (!uid) {
+        showError('❗ 請輸入您的 UID');
+        return;
+      }
+      
+      if (uid.length !== 8) {
+        showError('❗ UID 格式錯誤，請輸入 8 位字符的 UID');
+        return;
+      }
+      
+      if (!/^[A-Z0-9]+$/.test(uid)) {
+        showError('❗ UID 只能包含大寫字母和數字');
+        return;
+      }
+      
+      showLoading();
+      
+      try {
+        // 模擬 API 延遲
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 在實際環境中，這裡應該是 API 調用
+        // const response = await fetch(`${apiUrl}?uid=${uid}`);
+        // const data = await response.json();
+        
+        // 使用模擬資料
+        const data = mockData[uid];
+        
+        hideLoading();
+        
+        if (!data) {
+          showError(`⚠️ 找不到 UID：${uid}，請檢查是否輸入正確或聯絡管理員`);
+          return;
+        }
+        
+        showResult(data);
+        
+      } catch (error) {
+        hideLoading();
+        console.error('查詢錯誤:', error);
+        showError('❌ 系統發生錯誤，請稍後再試或聯絡技術支援');
+      }
+    }
+
+    // 監聽 Enter 鍵
+    document.getElementById('uidInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        queryData();
+      }
+    });
+
+    // 輸入格式化
+    document.getElementById('uidInput').addEventListener('input', function(e) {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  </script>
+</body>
+</html>
